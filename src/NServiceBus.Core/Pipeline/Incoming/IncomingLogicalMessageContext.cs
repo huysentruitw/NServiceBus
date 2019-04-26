@@ -36,7 +36,7 @@
                 return;
             }
 
-            var factory = Builder.Build<LogicalMessageFactory>();
+            var factory = Extensions.Get<LogicalMessageFactory>();
             var newLogicalMessage = factory.Create(newInstance);
 
             Message.Metadata = newLogicalMessage.Metadata;

@@ -40,12 +40,13 @@ namespace NServiceBus.Features
             var endpointInstances = context.Routing.EndpointInstances;
             var publishers = context.Routing.Publishers;
             var configuredPublishers = context.Settings.Get<ConfiguredPublishers>();
+            var messageMetadataRegistry = context.Settings.Get<MessageMetadataRegistry>();
 
             configuredPublishers.Apply(publishers, conventions, enforceBestPractices);
 
             context.Pipeline.Register(b =>
             {
-                var unicastPublishRouter = new UnicastPublishRouter(b.Build<MessageMetadataRegistry>(), i => transportInfrastructure.ToTransportAddress(LogicalAddress.CreateRemoteAddress(i)), b.Build<ISubscriptionStorage>());
+                var unicastPublishRouter = new UnicastPublishRouter(messageMetadataRegistry, i => transportInfrastructure.ToTransportAddress(LogicalAddress.CreateRemoteAddress(i)), b.Build<ISubscriptionStorage>());
                 return new UnicastPublishRouterConnector(unicastPublishRouter, distributionPolicy);
             }, "Determines how the published messages should be routed");
 

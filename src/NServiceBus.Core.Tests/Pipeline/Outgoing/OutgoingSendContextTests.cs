@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Core.Tests.Pipeline.Outgoing
 {
+    using Fakes;
     using NServiceBus.Pipeline;
     using NUnit.Framework;
 
@@ -13,7 +14,7 @@
             var options = new SendOptions();
             options.Context.Set("someKey", "someValue");
 
-            var testee = new OutgoingSendContext(message, "message-id", options.OutgoingHeaders, options.Context, new RootContext(null, null, null, null));
+            var testee = new OutgoingSendContext(message, "message-id", options.OutgoingHeaders, options.Context, new TestableRootContext());
             testee.Extensions.Set("someKey", "updatedValue");
             testee.Extensions.Set("anotherKey", "anotherValue");
             options.Context.TryGet("someKey", out string value);
@@ -32,7 +33,7 @@
             var options = new SendOptions();
             options.Context.Set("someKey", "someValue");
 
-            var parentContext = new RootContext(null, null, null, null);
+            var parentContext = new TestableRootContext();
 
             new OutgoingSendContext(message, "message-id", options.OutgoingHeaders, options.Context, parentContext);
 

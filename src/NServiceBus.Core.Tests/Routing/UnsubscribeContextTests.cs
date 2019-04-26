@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Core.Tests.Routing
 {
     using Extensibility;
+    using Fakes;
     using NUnit.Framework;
 
     [TestFixture]
@@ -12,7 +13,7 @@
             var context = new ContextBag();
             context.Set("someKey", "someValue");
 
-            var testee = new UnsubscribeContext(new RootContext(null, null, null, null), typeof(object), context);
+            var testee = new UnsubscribeContext(new TestableRootContext(), typeof(object), context);
             testee.Extensions.Set("someKey", "updatedValue");
             testee.Extensions.Set("anotherKey", "anotherValue");
             context.TryGet("someKey", out string value);
@@ -30,7 +31,7 @@
             var context = new ContextBag();
             context.Set("someKey", "someValue");
 
-            var parentContext = new RootContext(null, null, null, null);
+            var parentContext = new TestableRootContext();
 
             new UnsubscribeContext(parentContext, typeof(object), context);
 

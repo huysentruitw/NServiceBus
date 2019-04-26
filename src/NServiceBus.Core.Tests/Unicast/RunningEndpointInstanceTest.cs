@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Core.Tests.Fakes;
     using Features;
     using NServiceBus.Transport;
     using NUnit.Framework;
@@ -21,7 +22,7 @@
                 new FakeBuilder(),
                 null,
                 new FeatureRunner(new FeatureActivator(new SettingsHolder())),
-                new MessageSession(new RootContext(null, null, null, null)), new FakeTransportInfrastructure());
+                new MessageSession(new TestableRootContext()), new FakeTransportInfrastructure());
 
             await testee.Stop();
 

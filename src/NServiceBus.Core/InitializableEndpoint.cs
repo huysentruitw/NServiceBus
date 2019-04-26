@@ -6,8 +6,6 @@ namespace NServiceBus
     using System.Threading.Tasks;
     using Features;
     using Installation;
-    using MessageInterfaces;
-    using MessageInterfaces.MessageMapper.Reflection;
     using ObjectBuilder;
     using ObjectBuilder.Common;
     using Pipeline;
@@ -53,8 +51,7 @@ namespace NServiceBus
 
             var routing = InitializeRouting(transportInfrastructure, receiveConfiguration);
 
-            var messageMapper = new MessageMapper();
-            settings.Set<IMessageMapper>(messageMapper);
+            var messageComponent = InitializeMessageComponent();
 
             var featureStats = featureActivator.SetupFeatures(container, pipelineSettings, routing, receiveConfiguration);
             settings.AddStartupDiagnosticsSection("Features", featureStats);
@@ -67,7 +64,7 @@ namespace NServiceBus
             var pipelineCache = new PipelineCache(builder, settings);
             var queueBindings = settings.Get<QueueBindings>();
 
-            var receiveComponent = CreateReceiveComponent(receiveConfiguration, transportInfrastructure, queueBindings, pipelineCache, eventAggregator, messageMapper);
+            var receiveComponent = CreateReceiveComponent(receiveConfiguration, transportInfrastructure, queueBindings, pipelineCache, eventAggregator, messageComponent);
 
             var shouldRunInstallers = settings.GetOrDefault<bool>("Installers.Enable");
 
@@ -92,7 +89,7 @@ namespace NServiceBus
                 }
             );
 
-            var messageSession = new MessageSession(new RootContext(builder, pipelineCache, eventAggregator, messageMapper));
+            var messageSession = new MessageSession(new RootContext(builder, pipelineCache, eventAggregator, messageComponent));
 
             return new StartableEndpoint(settings, builder, featureActivator, transportInfrastructure, receiveComponent, criticalError, messageSession);
         }
@@ -109,6 +106,15 @@ namespace NServiceBus
             routing.Initialize(settings, transportInfrastructure.ToTransportAddress, pipelineSettings, receiveConfiguration);
 
             return routing;
+        }
+
+        MessageComponent InitializeMessageComponent()
+        {
+            var messageComponent = new MessageComponent(container, settings);
+
+            messageComponent.Initialize();
+
+            return messageComponent;
         }
 
         TransportInfrastructure InitializeTransportComponent()
@@ -154,7 +160,7 @@ namespace NServiceBus
             QueueBindings queueBindings,
             IPipelineCache pipelineCache,
             EventAggregator eventAggregator,
-            IMessageMapper messageMapper)
+            MessageComponent messageComponent)
         {
             var errorQueue = settings.ErrorQueueAddress();
 
@@ -166,7 +172,7 @@ namespace NServiceBus
                 builder,
                 criticalError,
                 errorQueue,
-                messageMapper);
+                messageComponent);
 
             receiveComponent.BindQueues(queueBindings);
 

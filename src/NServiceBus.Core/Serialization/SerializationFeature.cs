@@ -2,9 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Features;
-    using Logging;
     using MessageInterfaces;
     using Pipeline;
     using Serialization;
@@ -20,11 +18,10 @@
 
         protected internal sealed override void Setup(FeatureConfigurationContext context)
         {
-            var mapper = context.Settings.Get<IMessageMapper>();
             var settings = context.Settings;
+            var mapper = settings.Get<IMessageMapper>();
             var messageMetadataRegistry = settings.Get<MessageMetadataRegistry>();
-            mapper.Initialize(messageMetadataRegistry.GetAllMessages().Select(m => m.MessageType));
-
+            var logicalMessageFactory = settings.Get<LogicalMessageFactory>();
             var defaultSerializerAndDefinition = settings.GetMainSerializer();
 
             var defaultSerializer = CreateMessageSerializer(defaultSerializerAndDefinition, mapper, settings);
@@ -50,15 +47,8 @@
 
             var resolver = new MessageDeserializerResolver(defaultSerializer, additionalDeserializers);
 
-            var logicalMessageFactory = new LogicalMessageFactory(messageMetadataRegistry, mapper);
             context.Pipeline.Register(new DeserializeLogicalMessagesConnector(resolver, logicalMessageFactory, messageMetadataRegistry, mapper), "Deserializes the physical message body into logical messages");
             context.Pipeline.Register(new SerializeMessageConnector(defaultSerializer, messageMetadataRegistry), "Converts a logical message into a physical message");
-
-            context.Container.ConfigureComponent(_ => mapper, DependencyLifecycle.SingleInstance);
-            context.Container.ConfigureComponent(_ => messageMetadataRegistry, DependencyLifecycle.SingleInstance);
-            context.Container.ConfigureComponent(_ => logicalMessageFactory, DependencyLifecycle.SingleInstance);
-
-            LogFoundMessages(messageMetadataRegistry.GetAllMessages().ToList());
 
             context.Settings.AddStartupDiagnosticsSection("Serialization", new
             {
@@ -83,21 +73,5 @@
             var serializer = serializerFactory(mapper);
             return serializer;
         }
-
-        static void LogFoundMessages(IReadOnlyCollection<MessageMetadata> messageDefinitions)
-        {
-            if (!Logger.IsInfoEnabled)
-            {
-                return;
-            }
-            Logger.DebugFormat("Number of messages found: {0}", messageDefinitions.Count);
-            if (!Logger.IsDebugEnabled)
-            {
-                return;
-            }
-            Logger.Debug($"Message definitions: {Environment.NewLine}{string.Join(Environment.NewLine, messageDefinitions.Select(md => md.MessageType.FullName))}");
-        }
-
-        static ILog Logger = LogManager.GetLogger<SerializationFeature>();
     }
 }

@@ -13,7 +13,6 @@ namespace NServiceBus
     using Pipeline;
     using Settings;
     using Transport;
-    using Unicast.Messages;
 
     /// <summary>
     /// Configuration used to create an endpoint instance.
@@ -147,9 +146,7 @@ namespace NServiceBus
 
             var conventions = conventionsBuilder.Conventions;
             Settings.SetDefault(conventions);
-
-            ConfigureMessageTypes(conventions);
-
+            
             var container = ConfigureContainer();
 
             return new InitializableEndpoint(Settings, container, registrations, Pipeline, pipelineCollection);
@@ -176,25 +173,7 @@ namespace NServiceBus
 
             return customBuilder;
         }
-
-        void ConfigureMessageTypes(Conventions conventions)
-        {
-            var messageMetadataRegistry = new MessageMetadataRegistry(conventions.IsMessageType);
-
-            messageMetadataRegistry.RegisterMessageTypesFoundIn(Settings.GetAvailableTypes());
-
-            Settings.Set(messageMetadataRegistry);
-
-            var foundMessages = messageMetadataRegistry.GetAllMessages().ToList();
-
-            Settings.AddStartupDiagnosticsSection("Messages", new
-            {
-                CustomConventionUsed = conventions.CustomMessageTypeConventionUsed,
-                NumberOfMessagesFoundAtStartup = foundMessages.Count,
-                Messages = foundMessages.Select(m => m.MessageType.FullName)
-            });
-        }
-
+        
         static void ValidateEndpointName(string endpointName)
         {
             if (string.IsNullOrWhiteSpace(endpointName))
